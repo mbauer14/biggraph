@@ -1,0 +1,8 @@
+Random thoughts:
+    should this graph be undirected? If so i need to add edges both directions
+
+Question 2
+    Until convergence:
+        For each vertex:
+            Get all neighbors:x
+

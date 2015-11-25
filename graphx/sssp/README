@@ -1,0 +1,18 @@
+
+
+
+
+PART C
+
+    For clarity/ease of use in testing, all of part C was written in a single file.
+    On a high level, the code (available in graphx/src/main/scala/SimpleApp.scala) creates a graph,
+        and then performs the transformations necessary to the run each problem.
+    1. RDDs are created from HDFS for the 200 batches
+    2. These RDDs are turned into vertices (each vertex has an attribute which equals the word count).
+    3. The edges are created
+        This is done by two loops. 
+        The first loop is over all RDDS.
+            The second loop is from the first RDD to all later RDDs.
+            For each pair, the intersection of the two RDDS is calculated. If not empty, there is a common word, and an edge is added.
+
+    4. The graph is created from the vertices and edges created above.
