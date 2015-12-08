@@ -1,18 +1,40 @@
-a = """
-[0,0,[[1,1],[3,3]]]
-[1,0,[[0,1],[2,2],[3,1]]]
-[2,0,[[1,2],[4,4]]]
-[3,0,[[0,3],[1,1],[4,4]]]
-[4,0,[[3,4],[2,4]]]
-"""
-vertices = []
-edges = []
-for line in a.split():
-    source_id, source_weight, vertEdges = eval(line)
-    vertices.append((source_id, source_weight))
-    for edge in vertEdges:
-        edges.append((source_id, edge[0], edge[1]))
+import sys
+
+def readInput(inputpath):
+    with open(inputpath) as f:
+        return f.readlines()
+
+def outputToFile(outputpath, edges):
+    with open(outputpath, 'w') as f:
+        for edge in edges:
+            f.write(" ".join(edge) + "\n")
+
+if __name__ == "__main__":
+    args = sys.argv
+    if len(args) == 2:
+        filepath = args[1]
+        inputpath = filepath + "_giraph.txt"
+        outputpath = filepath + "_graphx.txt"
+        print("Converting {} to {}".format(inputpath, outputpath))
+
+        lines = readInput(inputpath)
+
+        vertices = []
+        edges = []
+        for line in lines:
+            source_id, source_weight, vertEdges = eval(line)
+            vertices.append((source_id, source_weight))
+            for edge in vertEdges:
+                edges.append([str(source_id), str(edge[0])])
 
 
-print("Vertices: {}".format(vertices))
-print("Edges: {}".format(edges))
+        for v in vertices:
+            print v
+            if v[1] != 1:
+                print "not zero!"
+        print edges
+
+        outputToFile(outputpath, edges)
+
+    else:
+        print("Error - supply the correct dataset")
