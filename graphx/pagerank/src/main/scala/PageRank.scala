@@ -14,6 +14,9 @@ object PageRank {
         val appName = "CS-838-Final-PageRank"
         val master = "spark://10.0.1.56:7077"
 
+        // Open correct file from HDFS, supplied as first arg
+        val inputLocation = args(0)
+
         val conf = new SparkConf()
         conf.set("spark.driver.memory", "1g")
         conf.set("spark.eventLog.enabled", "true")
@@ -24,7 +27,7 @@ object PageRank {
         val sc = new SparkContext(conf)
 
         // Load the edges as a graph
-        val graph = GraphLoader.edgeListFile(sc, "/graphx/data/followers.txt")
+        val graph = GraphLoader.edgeListFile(sc, inputLocation)
         // Run PageRank
         val ranks = graph.pageRank(0.0001).vertices
         // Join the ranks with the usernames

@@ -1,4 +1,4 @@
-name := "WCC"
+name := "GraphX WCC"
 
 version := "1.0"
 

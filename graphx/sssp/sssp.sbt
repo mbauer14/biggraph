@@ -1,4 +1,4 @@
-name := "SSSP"
+name := "GraphX SSSP"
 
 version := "1.0"
 

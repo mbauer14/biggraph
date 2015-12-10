@@ -13,6 +13,8 @@ object WCC {
         val appName = "CS-838-Assignment3-PartC"
         val master = "spark://10.0.1.56:7077"
 
+        val inputFilePath = args(0)
+
         val conf = new SparkConf()
         conf.set("spark.driver.memory", "1g")
         conf.set("spark.eventLog.enabled", "true")
@@ -23,7 +25,7 @@ object WCC {
         val sc = new SparkContext(conf)
 
         // Load the graph as in the PageRank example
-        val graph = GraphLoader.edgeListFile(sc, "/graphx/data/followers.txt")
+        val graph = GraphLoader.edgeListFile(sc, inputFilePath)
         // Find the connected components
         val cc = graph.connectedComponents().vertices
         // Join the connected components with the usernames
