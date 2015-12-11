@@ -42,7 +42,10 @@ object SSSP {
             },
             (a,b) => math.min(a,b) // Merge Message
         )
-        println(sssp.vertices.collect.mkString("\n"))
+        
+        // Save to HDFS (similar to giraph)
+        sssp.vertices.saveAsTextFile(outputFilePath)
+        //println(sssp.vertices.collect.mkString("\n"))
         
     }
 }

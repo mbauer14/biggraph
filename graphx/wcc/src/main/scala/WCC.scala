@@ -14,6 +14,7 @@ object WCC {
         val master = "spark://10.0.1.56:7077"
 
         val inputFilePath = args(0)
+        val outputFilePath = args(1)
 
         val conf = new SparkConf()
         conf.set("spark.driver.memory", "1g")
@@ -28,16 +29,11 @@ object WCC {
         val graph = GraphLoader.edgeListFile(sc, inputFilePath)
         // Find the connected components
         val cc = graph.connectedComponents().vertices
-        // Join the connected components with the usernames
-        val users = sc.textFile("/graphx/data/users.txt").map { line =>
-              val fields = line.split(",")
-                (fields(0).toLong, fields(1))
-        }
-        val ccByUsername = users.join(cc).map {
-              case (id, (username, cc)) => (username, cc)
-        }
-        // Print the result
-        println(ccByUsername.collect().mkString("\n"))
-        
+
+        // Save to HDFS (similar to giraph)
+        cc.saveAsTextFile(outputFilePath)
+
+        // println(cc.collect().mkString("\n"))
+
     }
 }

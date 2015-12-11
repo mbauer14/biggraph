@@ -16,6 +16,7 @@ object PageRank {
 
         // Open correct file from HDFS, supplied as first arg
         val inputLocation = args(0)
+        val outputFilePath = args(1)
 
         val conf = new SparkConf()
         conf.set("spark.driver.memory", "1g")
@@ -30,16 +31,11 @@ object PageRank {
         val graph = GraphLoader.edgeListFile(sc, inputLocation)
         // Run PageRank
         val ranks = graph.pageRank(0.0001).vertices
-        // Join the ranks with the usernames
-        val users = sc.textFile("/graphx/data/users.txt").map { line =>
-              val fields = line.split(",")
-                (fields(0).toLong, fields(1))
-        }
-        val ranksByUsername = users.join(ranks).map {
-              case (id, (username, rank)) => (username, rank)
-        }
-        // Print the result
-        println(ranksByUsername.collect().mkString("\n"))
+       
+        // Save to HDFS
+        ranks.saveAsTextFile(outputFilePath)
+        //print the result
+        //println(ranks.collect().mkString("\n"))
 
     }
 }
