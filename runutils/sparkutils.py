@@ -2,10 +2,12 @@ from __future__ import division
 import json
 import glob
 import shutil
+import subprocess
+import os
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
-def removeSparkLocalDirs():
+def removeLocalDirs():
     print("Removing all local spark dirs")
     for vm in vms:
         cat_output = subprocess.check_output(['ssh', vm, 'rm', '-rf', '/home/ubuntu/storage/data/spark/rdds_map/*'])

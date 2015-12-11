@@ -2,10 +2,11 @@
 import subprocess
 from runutils import procutils
 from runutils import sparkutils
-from runutils import giraphutils
+from runutils import mrutils
 import os
 import json
 import pprint
+import datetime
 # ACTUAL
 #types = ['giraph', 'graphx']
 #datasets = ['gnutella', 'google', 'livejournal']
@@ -19,18 +20,18 @@ NUM_ITERS = 1
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
 
-def callScript(xtype, algo, dataset, logfile, hdfsPath):
-    script = '/run_{}_{}.sh'.format(xtype, algo)
+def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
+    script = './run_{}_{}.sh'.format(xtype, algo)
     print 'Running script: %s > %s' % (script, logfile)
     f = open(logfile, 'w')
-    subprocess.call([script, dataset, hdfsPath], stdout=f)
+    subprocess.call([script, dataset, os.path.join(hdfsPath, name)], stdout=f)
 
 
 def output_to_file(resultFile, results):
     if os.path.exists(resultFile):
         os.remove(resultFile)
 
-    with open(resultfile, 'w') as outfile:
+    with open(resultFile, 'w') as outfile:
         json.dump(results, outfile)
 
     print('resultFile: {}'.format(resultFile))
@@ -42,7 +43,7 @@ def emptyBufferCaches():
     for vm in vms:
         cat_output = subprocess.check_output(['ssh', vm, './clear_cache.sh'])
 
-def hadoopMakeDir(hdfsPath):
+def hadoopMakeDirs(hdfsPath):
     subprocess.call(['hadoop', 'dfs', '-mkdir', hdfsPath])
 
 def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
@@ -61,7 +62,7 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     print 'initial stats complete'
 
     #Create all the paths
-    name = '_'.join([xtype, algo, dataset, iterationNo])
+    name = '_'.join([str(a) for a in [xtype, algo, dataset, iterationNo]])
     logfile = os.path.join(resultsDir, 'logs', name)
     xoutputdir = os.path.join(resultsDir, 'xoutput', name)
     resultfile = os.path.join(resultsDir, 'data', name)
@@ -100,14 +101,15 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
             }
 
     # Echo everything to a file
-    output_to_file(xtype, algo, dataset, iterationNo, results)
+    output_to_file(resultfile, results)
 
 
-def main()
+def main():
     # Get current time to save results
     currtime = str(datetime.datetime.now()).replace("-", "_").replace(" ", "-").replace(":", "_")
     currtime = currtime[:currtime.find(".")]
 
+    print("currtime: {}".format(currtime))
     # Make the directory which will hold all results
     resultsDir = os.path.join("results", "{}-iters_{}".format(currtime, NUM_ITERS))
     dataDir = os.path.join(resultsDir, 'data')
@@ -115,7 +117,7 @@ def main()
     xOutputDir = os.path.join(resultsDir, 'xoutput')
     os.makedirs(resultsDir)
     os.makedirs(dataDir)
-    os.makedirs(logsDir)
+    os.makedirs(logDir)
     os.makedirs(xOutputDir)
 
     hdfsPath = "/final/{}-iters{}".format(currtime, NUM_ITERS)
@@ -123,12 +125,10 @@ def main()
 
     for iterationNo in range(0, NUM_ITERS):
         for algo in algos:
-            for dataset in dataset:
-
+            for dataset in datasets:
                 for xtype in xtypes:
                     emptyBufferCaches()
                     sparkutils.removeLocalDirs()
-                    sparkutils.clearLogs()
                     print("{} iter {}: starting {} {} {}".format(currtime, iterationNo, xtype, algo, dataset))
                     runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo)
 

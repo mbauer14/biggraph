@@ -44,7 +44,7 @@ object SSSP {
         )
         
         // Save to HDFS (similar to giraph)
-        sssp.vertices.saveAsTextFile(outputFilePath)
+        //sssp.vertices.saveAsTextFile(outputFilePath)
         //println(sssp.vertices.collect.mkString("\n"))
         
     }

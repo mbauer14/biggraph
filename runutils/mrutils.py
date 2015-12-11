@@ -101,5 +101,5 @@ def get_task_stats(name):
     return totalTasks, ratio, tasks
 
 if __name__ == '__main__':
-    copy_mr_log_file(12, 'mr')
     #remove_all_mr_logs()
+    pass
