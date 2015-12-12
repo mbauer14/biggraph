@@ -14,7 +14,7 @@ import datetime
 
 xtypes = ['giraph', 'graphx']
 datasets = ['tiny']
-algos = ['pagerank']
+algos = ['sssp']
 NUM_ITERS = 1
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']

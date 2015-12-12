@@ -15,6 +15,9 @@ object SSSP {
         val appName = "CS-838-FinalGraphX-SSSP"
         val master = "spark://10.0.1.56:7077"
 
+        val inputFilePath = args(0)
+        val outputFilePath = args(1)
+
         val conf = new SparkConf()
         conf.set("spark.driver.memory", "1g")
         conf.set("spark.eventLog.enabled", "true")
@@ -24,12 +27,9 @@ object SSSP {
         conf.set("spark.task.cpus", "1")
         val sc = new SparkContext(conf)
 
-        // Import random graph generation library
-        // A graph with edge attributes containing distances
-        val graph: Graph[Long, Double] = GraphGenerators.logNormalGraph(sc, numVertices = 100).mapEdges(e => e.attr.toDouble)
+        val graph = GraphLoader.edgeListFile(sc, inputFilePath)
+        val sourceId: VertexId = 0 // The ultimate source
 
-        val sourceId: VertexId = 42 // The ultimate source
-        // Initialize the graph such that all vertices except the root have distance infinity.
         val initialGraph = graph.mapVertices((id, _) => if (id == sourceId) 0.0 else Double.PositiveInfinity)
         val sssp = initialGraph.pregel(Double.PositiveInfinity)(
             (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
@@ -44,8 +44,8 @@ object SSSP {
         )
         
         // Save to HDFS (similar to giraph)
-        //sssp.vertices.saveAsTextFile(outputFilePath)
+        sssp.vertices.saveAsTextFile(outputFilePath)
+
         //println(sssp.vertices.collect.mkString("\n"))
-        
     }
 }
