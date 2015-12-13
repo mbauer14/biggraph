@@ -1,10 +1,11 @@
 import json
 import subprocess
-
+import threading
+import time
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
-def getUsage(prev, curr):
+def get_cpu_usage(prev, curr):
     prevIdle = prev['idle'] + prev['iowait']
     currIdle = curr['idle'] + curr['iowait']
     prevActive = prev['user'] + prev['nice'] + prev['system'] +\
@@ -18,21 +19,63 @@ def getUsage(prev, curr):
     cpuPercentage = ((currTotal-prevTotal) - (currIdle-prevIdle))/(1.0*(currTotal-prevTotal))
     return cpuPercentage
 
-def get_mem_cpu_usage(cpuVals, memVals, maxVals):
-    '''
-        Just loops forever (NOT THREADSAFE but who cares for this project)
-    '''
-    for vm in vms:
+def parse_cpu(proc):
+    p = proc[0].split()
+    currCpuStats = {
+        'user': int(p[1]),
+        'nice': int(p[2]),
+        'system': int(p[3]),
+        'idle': int(p[4]),
+        'iowait': int(p[5]),
+        'irq': int(p[6]),
+        'softirq': int(p[7]),
+        'steal': int(p[8]),
+        'guest': int(p[9]),
+        'guest_nice': int(p[10])
+    }
+
+def parse_mem(mem):
+    return int(mem[2].split()[2])
 
 
-def parse_cpu_usage(a):
-    for vm in vms:
-        cat_output = subprocess.check_output(['ssh', vm, 'cat', '/proc/stat', ';', 'free', '-m'])
-        cat_output = cat_output.splitlines()
-        proc = cat_output[0:13]
-        return cat_output
+class LoopingStats(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.cpuMemStats = dict()
+        self.signal = True
+        self.maxMem = 0
 
+    def run(self):
+        prevCpuStatsByVm = dict()
+        while self.signal:
+            currCpus = []
+            currMems = []
+            currtime = int(time.time())
+            for vm in vms:
+                cat_output = subprocess.check_output(['ssh', vm, 'cat', '/proc/stat', ';', 'free', '-m'])
+                cat_output = cat_output.splitlines()
+                proc = cat_output[0:13]
+                mem = cat_output[13:]
 
+                currCpuStats = parse_cpu(proc)
+                currMemStats = parse_mem(proc)
+
+                prevCpuStats = prevCpuStatsByVm.get(vm, None)
+
+                if currMemStats > self.maxMem:
+                    self.maxMem = currMemStats
+
+                if prevCpuStats:
+                    cpuUtil = get_cpu_usage(prevCpuStats, currCpuStats)
+                    currCpus.append(cpuUtil)
+                    currMems.append(currMemStats)
+
+                prevCpuStatsByVm[vm] = currCpuStats
+
+            if len(currCpus) > 0:
+                avgCpu = sum(currCpus)/4.0
+                avgMem = sum(currMems)/4.0
+                self.cpuMemStats.append({'time': currtime, 'mem': avgMem, 'cpu': avgCpu})
 
 def parse_net(a):
     """

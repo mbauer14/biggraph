@@ -34,7 +34,7 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
     script = './run_{}_{}.sh'.format(xtype, algo)
     print 'Running script: %s > %s' % (script, logfile)
     f = open(logfile, 'w')
-    subprocess.call([script, dataset, os.path.join(hdfsPath, name)], stdout=f)
+    subprocess.call([script, dataset, os.path.join(hdfsPath, name)], stdout=f, stderr=f)
 
 
 def output_to_file(resultFile, results):
