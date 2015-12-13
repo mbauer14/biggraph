@@ -8,16 +8,26 @@ import json
 import pprint
 import datetime
 # ACTUAL
-#types = ['giraph', 'graphx']
-#datasets = ['gnutella', 'google', 'livejournal']
-#algos = ['sssp', 'wcc', 'pagerank']
+
+#xtypes = ['giraph', 'graphx']
+#datasets = ['tiny']
+#algos = ['sssp', 'cc', 'pagerank']
 
 xtypes = ['giraph', 'graphx']
-datasets = ['tiny']
-algos = ['sssp']
+datasets = ['gnutella', 'google', 'livejournal']
+algos = ['sssp', 'cc', 'pagerank']
+
 NUM_ITERS = 1
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
+
+# DONE - place here when done!
+
+#TODO - do these and you're done!
+# Get setup and total time in giraph (from ~/logs/apps/
+# Remove anything in ~/logs/apps/ before each run
+# Add setup time measurement, calculation time to 3 graphx queries
+# Get setup time from graphx
 
 
 def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
@@ -59,6 +69,8 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     # Get the initial stats for all vms
     print 'getting initial stats'
     start_stats = procutils.get_all_stats()
+    loop_stats = procutils.StatsLooper()
+    loop_stats.start()
     print 'initial stats complete'
 
     #Create all the paths
@@ -84,21 +96,27 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     diff_stats = procutils.calc_stats_diff(start_stats, stop_stats)
     print 'Finishing diff_stats'
 
-    time_elapsed = procutils.read_time_stamps(logfile)
+    # Get elapsed time
+    print("get elapsed time, cpumem")
+    time_elapsed, start_time = procutils.read_time_stamps(logfile)
+    cpuMemVals = loop_stats.cpuMemVals
+    maxMem = loop_stats.maxMem
+    loop_stats.signal = False
+    print("finished elapsed time, cpumem")
+
+    # Change times in the cpuMemVals to "query time", not abs time
+    for entry in cpuMemVals:
+        entry['time'] = entry['time'] - start_time
 
     print 'get_task_stats start'
-    if (xtype == 'giraph'):
-        total_num_tasks, ratio_tasks, task_distribution = mrutils.get_task_stats(xoutputdir)
-    else:
-        total_num_tasks, ratio_tasks, task_distribution = sparkutils.get_task_stats(xoutputdir)
     print 'get_task_stats finish'
 
-    results = {'disknet': diff_stats,
-                'time_elapsed': time_elapsed,
-                'total_num_taks': total_num_tasks,
-                'ratio_tasks': ratio_tasks,
-                'task_distribution': task_distribution
-            }
+    results = {
+        'disknet': diff_stats,
+        'time_elapsed': time_elapsed,
+        'maxMem': maxMem,
+        'cpuMem': cpuMemVals
+    }
 
     # Echo everything to a file
     output_to_file(resultfile, results)

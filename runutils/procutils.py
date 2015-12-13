@@ -4,6 +4,35 @@ import subprocess
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
+def getUsage(prev, curr):
+    prevIdle = prev['idle'] + prev['iowait']
+    currIdle = curr['idle'] + curr['iowait']
+    prevActive = prev['user'] + prev['nice'] + prev['system'] +\
+        prev['irq'] + prev['softirq'] + prev['steal']
+    currActive = curr['user'] + curr['nice'] + curr['system'] +\
+        curr['irq'] + curr['softirq'] + curr['steal']
+
+    prevTotal = prevIdle + prevActive
+    currTotal = currIdle + currActive
+
+    cpuPercentage = ((currTotal-prevTotal) - (currIdle-prevIdle))/(1.0*(currTotal-prevTotal))
+    return cpuPercentage
+
+def get_mem_cpu_usage(cpuVals, memVals, maxVals):
+    '''
+        Just loops forever (NOT THREADSAFE but who cares for this project)
+    '''
+    for vm in vms:
+
+
+def parse_cpu_usage(a):
+    for vm in vms:
+        cat_output = subprocess.check_output(['ssh', vm, 'cat', '/proc/stat', ';', 'free', '-m'])
+        cat_output = cat_output.splitlines()
+        proc = cat_output[0:13]
+        return cat_output
+
+
 
 def parse_net(a):
     """
@@ -14,7 +43,7 @@ def parse_net(a):
         s: the output of /proc/net/dev
 
     Returns:
-        tuple (sectors_read, sectors_written)    
+        tuple (sectors_read, sectors_written)
     """
     receive_byte =  int(a[2].split()[1])
     transmit_byte = int(a[2].split()[9])
@@ -51,7 +80,7 @@ def parse_disk(a):
 
 def read_time_stamps(filename):
     """
-    Takes in filename, reads it and outputs a tuple of start time 
+    Takes in filename, reads it and outputs a tuple of start time
     and end time
 
     Args:
@@ -71,14 +100,14 @@ def read_time_stamps(filename):
 def ssh_machine_proc_stats(hostname, filepath):
     """
         Uses ssh command to execute a cat, get info for specific filepath
-    """ 
+    """
     # Execute ssh command, get results
-    cat_output = subprocess.check_output(['ssh', hostname, 'cat', filepath])  
+    cat_output = subprocess.check_output(['ssh', hostname, 'cat', filepath])
     return cat_output
 
 def get_machine_proc_stats(hostname, filepath):
     """
-        Gets the proc stats for a specific machine and type 
+        Gets the proc stats for a specific machine and type
     """
     cat_output = ssh_machine_proc_stats(hostname, filepath).split('\n')
     if 'disk' in filepath:
@@ -90,7 +119,7 @@ def get_machine_proc_stats(hostname, filepath):
 
 def get_all_stats():
     """
-        Returns a dictionary of 
+        Returns a dictionary of
 
         {
             vm1:
@@ -116,9 +145,9 @@ def get_all_stats():
                 }
         }
     """
-   
+
     all_stats = {}
-     
+
     for vm in vms:
         all_stats[vm] = {'disk': {}, 'net': {}}
         all_stats[vm]['disk'] = get_machine_proc_stats(vm, '/proc/diskstats')
@@ -129,7 +158,7 @@ def get_all_stats():
 
 def calc_stats_diff(start_stats, stop_stats):
     """
-         
+
     """
     diff_stats = {}
 
@@ -139,13 +168,13 @@ def calc_stats_diff(start_stats, stop_stats):
         diff_stats[vm]['disk']['write_bytes'] = stop_stats[vm]['disk']['write_bytes'] - start_stats[vm]['disk']['write_bytes']
         diff_stats[vm]['net']['transmit_bytes'] = stop_stats[vm]['net']['transmit_bytes'] - start_stats[vm]['net']['transmit_bytes']
         diff_stats[vm]['net']['receive_bytes'] = stop_stats[vm]['net']['receive_bytes'] - start_stats[vm]['net']['receive_bytes']
-        
+
 
     return diff_stats
 
 
 if __name__ == "__main__":
-    import pprint 
+    import pprint
     import time
     print 'a'
     start = get_all_stats()
