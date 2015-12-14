@@ -11,6 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 object PageRank {
 
     def main(args: Array[String]) {
+        val startMillis = System.currentTimeMillis
         val appName = "CS-838-Final-PageRank"
         val master = "spark://10.0.1.56:7077"
 
@@ -26,26 +27,23 @@ object PageRank {
         conf.set("spark.executor.cores", "4")
         conf.set("spark.task.cpus", "1")
 
-        val startLoad = System.currentTimeMillis
+        val startSetup = System.currentTimeMillis
         val sc = new SparkContext(conf)
 
         // Load the edges as a graph
         val graph = GraphLoader.edgeListFile(sc, inputLocation)
-        val loadTime = System.currentTimeMillis - startLoad
+        val setupTime = System.currentTimeMillis - startSetup
         // Run PageRank
-        val startCalc = System.currentTimeMillis
         val ranks = graph.pageRank(0.0001).vertices
-        val calcTime = System.currentTimeMillis - startCalc
        
         // Save to HDFS
-        val startSave = System.currentTimeMillis
+        val startFinish = System.currentTimeMillis
         ranks.saveAsTextFile(outputFilePath)
-        val saveTime = System.currentTimeMillis - startSave
+        val finishTime = System.currentTimeMillis - startFinish
 
-        val setupTime = loadTime + saveTime
-
-        println(s"SetupTime: $setupTime")
-        println(s"CalcTime: $calcTime")
+        println(s"SETUP_TIME: $setupTime")
+        println(s"FINISH_TIME: $finishTime")
+        println(s"START_MILLIS: $startMillis")
         //print the result
         //println(ranks.collect().mkString("\n"))
 

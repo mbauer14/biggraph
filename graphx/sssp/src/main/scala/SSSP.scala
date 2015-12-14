@@ -12,6 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 object SSSP {
 
     def main(args: Array[String]) {
+        val startMillis = System.currentTimeMillis
         val appName = "CS-838-FinalGraphX-SSSP"
         val master = "spark://10.0.1.56:7077"
 
@@ -25,9 +26,11 @@ object SSSP {
         conf.set("spark.executor.memory", "21000m")
         conf.set("spark.executor.cores", "4")
         conf.set("spark.task.cpus", "1")
+        val startSetup = System.currentTimeMillis
         val sc = new SparkContext(conf)
 
         val graph = GraphLoader.edgeListFile(sc, inputFilePath)
+        val setupTime = System.currentTimeMillis - startSetup
         val sourceId: VertexId = 0 // The ultimate source
 
         val initialGraph = graph.mapVertices((id, _) => if (id == sourceId) 0.0 else Double.PositiveInfinity)
@@ -44,7 +47,13 @@ object SSSP {
         )
         
         // Save to HDFS (similar to giraph)
+        val startFinish = System.currentTimeMillis
         sssp.vertices.saveAsTextFile(outputFilePath)
+        val finishTime = System.currentTimeMillis - startFinish
+        
+        println(s"SETUP_TIME: $setupTime")
+        println(s"FINISH_TIME: $finishTime")
+        println(s"START_MILLIS: $startMillis")
 
         //println(sssp.vertices.collect.mkString("\n"))
     }

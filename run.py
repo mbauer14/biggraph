@@ -112,9 +112,10 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
 
     # Get setup time/other time
     if xtype == 'giraph':
-        setup_time, computation_time = mrutils.get_times()
+        times = mrutils.get_times()
     else:
-        setup_time, computation_time = sparkutils.get_times()
+        times = sparkutils.get_times(logfile)
+
     # Change times in the cpuMemVals to "query time", not abs time
     for entry in cpuMemVals:
         entry['time'] = entry['time'] - start_time
@@ -123,7 +124,8 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
         'disknet': diff_stats,
         'total_time_elapsed': total_time_elapsed,
         'maxMem': maxMem,
-        'cpuMem': cpuMemVals
+        'cpuMem': cpuMemVals,
+        'times': times
     }
 
     # Echo everything to a file

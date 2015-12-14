@@ -22,11 +22,23 @@ def remove_all_mr_logs():
     subprocess.call(['hadoop', 'dfs', '-rm', '-f', hdfspath])
 
 
+
+
+def get_times():
+    """
+        Looks in ~/logs/apps/*, tries to find a stdout file
+        Parses file to find setup time and close time
+        Setup includes setup/load input to HDFS, closing is just from logs
+        setup = init + setup + input superstep
+        close = shutdown
+        startMillis = start time
+    """
     pattern = dict()
     pattern['startMillis'] = re.compile('START MILLIS: ([0-9]+)')
     pattern['init'] = re.compile('INIT: ([0-9]+)')
     pattern['setup'] = re.compile('SETUP: ([0-9]+)')
     pattern['inputSuperStep'] = re.compile('input superstep: Took ([0-9]+\.[0-9]+) seconds')
+    pattern['finish'] = re.compile('shutdown: Took ([0-9]+\.[0-9]+) seconds')
     filepaths = glob.glob('/home/ubuntu/logs/apps/*/*/task-*-stdout.log')
     filepath = filepaths[0]
     print("filepath: {}".format(filepath))
@@ -42,31 +54,16 @@ def remove_all_mr_logs():
                 match = re.finditer(pattern[key], l)
                 for m in match:
                     results[key] = m.group(1)
+                    # Convert to milliseconds
+                    if key in ['inputSuperStep', 'finish']:
+                        results[key] *= 1000
                     found[key] = True
 
-
-def get_times():
-    """
-        Looks in ~/logs/apps/*, tries to find a stdout file
-        Parses file to find setup time and close time
-        Setup includes setup/load input to HDFS, closing is just from logs
-        setup = init + setup + input superstep
-        close = shutdown
-        startMillis = start time
-    """
-    startMillisMatch = re.compile('START MILLIS: {0-9}+')
-    filepaths = glob.glob('/home/ubuntu/logs/apps/*/*/task-*-stdout.log')
-    filepath = filepaths[0]
-    with open(filepath) as f:
-        lines = f.readlines()
-
-    for l in lines:
-        startMatch = re.finditer(startMillisMatch, l)
-        for s in startMatch:
-            print(match.groups())
-
-
-
+    returnDict = dict()
+    returnDict['setup'] = results['init'] + results['setup'] + results['inputSuperStep']
+    returnDict['finish'] = results['finish']
+    returnDict['startMillis'] = results['startMillis']
+    return returnDict
 
 def copy_mr_log_file(xoutputdir):
 
