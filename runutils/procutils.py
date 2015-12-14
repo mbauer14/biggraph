@@ -204,9 +204,7 @@ def calc_stats_diff(start_stats, stop_stats):
     """
 
     """
-    diff_stats = {}
-
-    diff_stats[vm] = {'disk': {}, 'net': {}}
+    diff_stats = {'disk': {}, 'net': {}}
     diff_stats['disk']['read_bytes'] = stop_stats['disk']['read_bytes'] - start_stats['disk']['read_bytes']
     diff_stats['disk']['write_bytes'] = stop_stats['disk']['write_bytes'] - start_stats['disk']['write_bytes']
     diff_stats['net']['transmit_bytes'] = stop_stats['net']['transmit_bytes'] - start_stats['net']['transmit_bytes']

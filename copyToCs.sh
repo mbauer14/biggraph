@@ -1,5 +1,5 @@
 # GIRAPH RELATED STUFF
-rsync -avzC giraph/*.sh giraph/munged giraph/giraph-examples-1.2.0-SNAPSHOT-for-hadoop-2.6.0-jar-with-dependencies.jar bauer@best-linux.cs.wisc.edu:~/final/giraph/
+#rsync -avzC giraph/*.sh giraph/munged giraph/giraph-examples-1.2.0-SNAPSHOT-for-hadoop-2.6.0-jar-with-dependencies.jar bauer@best-linux.cs.wisc.edu:~/final/giraph/
 
 # UTILS RELATED STUFF
 rsync -avzC run.py runutils *.sh bauer@best-linux.cs.wisc.edu:~/final/

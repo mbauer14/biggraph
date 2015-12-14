@@ -24,11 +24,12 @@ vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
 # DONE - place here when done!
 # Remove anything in ~/logs/apps/ before each run
-
-#TODO - do these and you're done!
 # Get setup and total time in giraph (from ~/logs/apps/
 # Add setup time measurement, calculation time to 3 graphx queries
 # Get setup time from graphx
+
+#TODO - do these and you're done!
+# Detect a failed query
 
 
 def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
@@ -105,7 +106,7 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     # Get elapsed time
     print("get elapsed time, cpumem")
     total_time_elapsed, start_time = procutils.read_time_stamps(logfile)
-    cpuMemVals = loop_stats.cpuMemVals
+    cpuMemVals = loop_stats.cpuMemStats
     maxMem = loop_stats.maxMem
     loop_stats.signal = False
     print("finished elapsed time, cpumem")

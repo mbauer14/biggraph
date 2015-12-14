@@ -1,5 +1,5 @@
 # GIRAPH RELATED STUFF
-rsync -avzC giraph/*.sh giraph/munged giraph/giraph-examples-1.2.0-SNAPSHOT-for-hadoop-2.6.0-jar-with-dependencies.jar cloudlab:~/final/giraph/
+#rsync -avzC giraph/*.sh giraph/munged giraph/giraph-examples-1.2.0-SNAPSHOT-for-hadoop-2.6.0-jar-with-dependencies.jar cloudlab:~/final/giraph/
 
 # UTILS RELATED STUFF
 rsync -avzC run.py runutils *.sh cloudlab:~/final/

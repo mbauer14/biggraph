@@ -40,24 +40,24 @@ def get_times():
     pattern['inputSuperStep'] = re.compile('input superstep: Took ([0-9]+\.[0-9]+) seconds')
     pattern['finish'] = re.compile('shutdown: Took ([0-9]+\.[0-9]+) seconds')
     filepaths = glob.glob('/home/ubuntu/logs/apps/*/*/task-*-stdout.log')
-    filepath = filepaths[0]
-    print("filepath: {}".format(filepath))
-    with open(filepath) as f:
-        lines = f.readlines()
-
     found= {key:False for key in pattern.keys()}
     results = dict()
+    for filepath in filepaths:
+        print("filepath: {}".format(filepath))
+        with open(filepath) as f:
+            lines = f.readlines()
 
-    for l in lines:
-        for key in found.keys():
-            if not found[key]:
-                match = re.finditer(pattern[key], l)
-                for m in match:
-                    results[key] = m.group(1)
-                    # Convert to milliseconds
-                    if key in ['inputSuperStep', 'finish']:
-                        results[key] *= 1000
-                    found[key] = True
+
+        for l in lines:
+            for key in found.keys():
+                if not found[key]:
+                    match = re.finditer(pattern[key], l)
+                    for m in match:
+                        results[key] = m.group(1)
+                        # Convert to milliseconds
+                        if key in ['inputSuperStep', 'finish']:
+                            results[key] *= 1000
+                        found[key] = True
 
     returnDict = dict()
     returnDict['setup'] = results['init'] + results['setup'] + results['inputSuperStep']

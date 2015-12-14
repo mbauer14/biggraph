@@ -4,6 +4,7 @@ import glob
 import shutil
 import subprocess
 import os
+import re
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
