@@ -8,6 +8,7 @@ import json
 import pprint
 import datetime
 import threading
+import time
 # ACTUAL
 
 #xtypes = ['giraph', 'graphx']
@@ -30,13 +31,31 @@ vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
 #TODO - do these and you're done!
 # Detect a failed query
+# Return the start time, calculate all that business
 
 
 def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
     script = './run_{}_{}.sh'.format(xtype, algo)
     print 'Running script: %s > %s' % (script, logfile)
     f = open(logfile, 'w')
-    subprocess.call([script, dataset, os.path.join(hdfsPath, name)], stdout=f, stderr=f)
+    isFail = True
+
+    startTime = int(time.time())
+    runProcess = subprocess.Popen([script, dataset, os.path.join(hdfsPath, name)], stdout=f, stderr=f, shell=True)
+    currTime = int(time.time())
+    # Let queries run for 120 seconds
+    while (int(time.time()) - startTime) < 200:
+        runProcess.poll()
+        if runProcess.returncode:
+            print("process completed!")
+            isFail = False
+            break
+
+        time.sleep(1)
+    return isFail
+
+
+
 
 
 def output_to_file(resultFile, results):
@@ -60,6 +79,12 @@ def clearAppLogs():
     for vm in vms:
         output = subprocess.check_output(['ssh', vm, 'rm', '-rf', '/home/ubuntu/logs/apps/*'])
 
+def copyLogsFromVms():
+    for vm in vms:
+        if vm != 'vm-1':
+            vmLoc = "{}:/home/ubuntu/logs/apps/*".format(vm)
+            output = subprocess.check_output(['scp', '-r', vmLoc, '/home/ubuntu/logs/apps/'])
+
 def hadoopMakeDirs(hdfsPath):
     subprocess.call(['hadoop', 'dfs', '-mkdir', hdfsPath])
 
@@ -73,6 +98,7 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
         algo = type of algorithm to run (connected components, sssp, pagerank)
         dataset = what kind of dataset to run (preprocessed and available in HDFS)
     """
+    isSuccess = True
     # Get the initial stats for all vms
     print 'getting initial stats'
     start_stats = procutils.get_all_stats()
@@ -90,8 +116,11 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     print 'logfile: %s' % logfile
 
     print 'running script!'
-    callRunScript(xtype, algo, dataset, logfile, hdfsPath, name)
+    isFail = callRunScript(xtype, algo, dataset, logfile, hdfsPath, name)
     print 'script complete'
+
+    if isFail:
+        print("Failed (timed out). Skipping the rest of calculations")
 
     # Get the final stats
     print 'Getting final stats.'
@@ -113,6 +142,7 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
 
     # Get setup time/other time
     if xtype == 'giraph':
+        copyLogsFromVms()
         times = mrutils.get_times()
     else:
         times = sparkutils.get_times(logfile)
@@ -126,7 +156,8 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
         'total_time_elapsed': total_time_elapsed,
         'maxMem': maxMem,
         'cpuMem': cpuMemVals,
-        'times': times
+        'times': times,
+        'isSuccess': True
     }
 
     # Echo everything to a file
