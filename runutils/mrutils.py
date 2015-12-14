@@ -5,6 +5,7 @@ import sys
 import os
 import glob
 import time
+import re
 
 def get_time():
     now = datetime.datetime.utcnow()
@@ -19,6 +20,53 @@ def remove_all_mr_logs():
     year, month, day = get_time()
     hdfspath = '/tmp/hadoop-yarn/staging/history/done/%s/%s/%s/000000/*' % (year, month, day)
     subprocess.call(['hadoop', 'dfs', '-rm', '-f', hdfspath])
+
+
+    pattern = dict()
+    pattern['startMillis'] = re.compile('START MILLIS: ([0-9]+)')
+    pattern['init'] = re.compile('INIT: ([0-9]+)')
+    pattern['setup'] = re.compile('SETUP: ([0-9]+)')
+    pattern['inputSuperStep'] = re.compile('input superstep: Took ([0-9]+\.[0-9]+) seconds')
+    filepaths = glob.glob('/home/ubuntu/logs/apps/*/*/task-*-stdout.log')
+    filepath = filepaths[0]
+    print("filepath: {}".format(filepath))
+    with open(filepath) as f:
+        lines = f.readlines()
+
+    found= {key:False for key in pattern.keys()}
+    results = dict()
+
+    for l in lines:
+        for key in found.keys():
+            if not found[key]:
+                match = re.finditer(pattern[key], l)
+                for m in match:
+                    results[key] = m.group(1)
+                    found[key] = True
+
+
+def get_times():
+    """
+        Looks in ~/logs/apps/*, tries to find a stdout file
+        Parses file to find setup time and close time
+        Setup includes setup/load input to HDFS, closing is just from logs
+        setup = init + setup + input superstep
+        close = shutdown
+        startMillis = start time
+    """
+    startMillisMatch = re.compile('START MILLIS: {0-9}+')
+    filepaths = glob.glob('/home/ubuntu/logs/apps/*/*/task-*-stdout.log')
+    filepath = filepaths[0]
+    with open(filepath) as f:
+        lines = f.readlines()
+
+    for l in lines:
+        startMatch = re.finditer(startMillisMatch, l)
+        for s in startMatch:
+            print(match.groups())
+
+
+
 
 def copy_mr_log_file(xoutputdir):
 

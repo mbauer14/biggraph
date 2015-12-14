@@ -7,6 +7,7 @@ import os
 import json
 import pprint
 import datetime
+import threading
 # ACTUAL
 
 #xtypes = ['giraph', 'graphx']
@@ -22,10 +23,10 @@ NUM_ITERS = 1
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
 # DONE - place here when done!
+# Remove anything in ~/logs/apps/ before each run
 
 #TODO - do these and you're done!
 # Get setup and total time in giraph (from ~/logs/apps/
-# Remove anything in ~/logs/apps/ before each run
 # Add setup time measurement, calculation time to 3 graphx queries
 # Get setup time from graphx
 
@@ -52,6 +53,11 @@ def emptyBufferCaches():
     # Execute ssh command, get results
     for vm in vms:
         cat_output = subprocess.check_output(['ssh', vm, './clear_cache.sh'])
+
+def clearAppLogs():
+    # Remove all files from ~/logs/apps/
+    for vm in vms:
+        output = subprocess.check_output(['ssh', vm, 'rm', '-rf', '/home/ubuntu/logs/apps/*'])
 
 def hadoopMakeDirs(hdfsPath):
     subprocess.call(['hadoop', 'dfs', '-mkdir', hdfsPath])
@@ -98,22 +104,24 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
 
     # Get elapsed time
     print("get elapsed time, cpumem")
-    time_elapsed, start_time = procutils.read_time_stamps(logfile)
+    total_time_elapsed, start_time = procutils.read_time_stamps(logfile)
     cpuMemVals = loop_stats.cpuMemVals
     maxMem = loop_stats.maxMem
     loop_stats.signal = False
     print("finished elapsed time, cpumem")
 
+    # Get setup time/other time
+    if xtype == 'giraph':
+        setup_time, computation_time = mrutils.get_times()
+    else:
+        setup_time, computation_time = sparkutils.get_times()
     # Change times in the cpuMemVals to "query time", not abs time
     for entry in cpuMemVals:
         entry['time'] = entry['time'] - start_time
 
-    print 'get_task_stats start'
-    print 'get_task_stats finish'
-
     results = {
         'disknet': diff_stats,
-        'time_elapsed': time_elapsed,
+        'total_time_elapsed': total_time_elapsed,
         'maxMem': maxMem,
         'cpuMem': cpuMemVals
     }
@@ -146,6 +154,7 @@ def main():
             for dataset in datasets:
                 for xtype in xtypes:
                     emptyBufferCaches()
+                    clearAppLogs()
                     sparkutils.removeLocalDirs()
                     print("{} iter {}: starting {} {} {}".format(currtime, iterationNo, xtype, algo, dataset))
                     runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo)

@@ -38,7 +38,7 @@ def parse_mem(mem):
     return int(mem[2].split()[2])
 
 
-class LoopingStats(threading.Thread):
+class StatsLooper(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.cpuMemStats = dict()
@@ -138,7 +138,7 @@ def read_time_stamps(filename):
         start_time = int(a[0].split()[1])
         end_time = int(a[len(a)-1].split()[1])
         elapsed_time = end_time - start_time
-        return elapsed_time
+        return elapsed_time, start_time
 
 def ssh_machine_proc_stats(hostname, filepath):
     """
@@ -165,36 +165,37 @@ def get_all_stats():
         Returns a dictionary of
 
         {
-            vm1:
-                {
-                    disk:
-                        read:
-                        write:
-                    net:
-                        receive:
-                        transmit:
-                },
-            vm2:
-                {
-                    ...
-                }
-            vm3:
-                {
-                    ...
-                },
-            vm4:
-                {
-                    ...
-                }
+            disk:
+                read:
+                write:
+            net:
+                receive:
+                transmit:
         }
     """
 
     all_stats = {}
 
+    net_transmit_bytes = 0
+    net_receive_bytes = 0
+    disk_read_bytes = 0
+    disk_write_bytes = 0
     for vm in vms:
-        all_stats[vm] = {'disk': {}, 'net': {}}
-        all_stats[vm]['disk'] = get_machine_proc_stats(vm, '/proc/diskstats')
-        all_stats[vm]['net'] = get_machine_proc_stats(vm, '/proc/net/dev')
+        disk = get_machine_proc_stats(vm, '/proc/diskstats')
+        net = get_machine_proc_stats(vm, '/proc/net/dev')
+        net_transmit_bytes += net['transmit_bytes']
+        net_receive_bytes += net['receive_bytes']
+        disk_read_bytes += disk['read_bytes']
+        disk_write_bytes += disk['write_bytes']
+
+    all_stats['disk'] = {
+        'read_bytes': disk_read_bytes/4.0,
+        'write_bytes': disk_write_bytes/4.0
+    }
+    all_stats['net'] = {
+        'transmit_bytes': net_transmit_bytes/4.0,
+        'receive_bytes': net_receive_bytes/4.0
+    }
 
     return all_stats
 
@@ -205,13 +206,11 @@ def calc_stats_diff(start_stats, stop_stats):
     """
     diff_stats = {}
 
-    for vm in vms:
-        diff_stats[vm] = {'disk': {}, 'net': {}}
-        diff_stats[vm]['disk']['read_bytes'] = stop_stats[vm]['disk']['read_bytes'] - start_stats[vm]['disk']['read_bytes']
-        diff_stats[vm]['disk']['write_bytes'] = stop_stats[vm]['disk']['write_bytes'] - start_stats[vm]['disk']['write_bytes']
-        diff_stats[vm]['net']['transmit_bytes'] = stop_stats[vm]['net']['transmit_bytes'] - start_stats[vm]['net']['transmit_bytes']
-        diff_stats[vm]['net']['receive_bytes'] = stop_stats[vm]['net']['receive_bytes'] - start_stats[vm]['net']['receive_bytes']
-
+    diff_stats[vm] = {'disk': {}, 'net': {}}
+    diff_stats['disk']['read_bytes'] = stop_stats['disk']['read_bytes'] - start_stats['disk']['read_bytes']
+    diff_stats['disk']['write_bytes'] = stop_stats['disk']['write_bytes'] - start_stats['disk']['write_bytes']
+    diff_stats['net']['transmit_bytes'] = stop_stats['net']['transmit_bytes'] - start_stats['net']['transmit_bytes']
+    diff_stats['net']['receive_bytes'] = stop_stats['net']['receive_bytes'] - start_stats['net']['receive_bytes']
 
     return diff_stats
 
