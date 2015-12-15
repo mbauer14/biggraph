@@ -30,7 +30,7 @@ object SSSP {
         val sc = new SparkContext(conf)
 
         val graph = GraphLoader.edgeListFile(sc, inputFilePath)
-        val setupTime = System.currentTimeMillis - startSetup
+        val postSetupMillis = System.currentTimeMillis
         val sourceId: VertexId = 0 // The ultimate source
 
         val initialGraph = graph.mapVertices((id, _) => if (id == sourceId) 0.0 else Double.PositiveInfinity)
@@ -47,14 +47,12 @@ object SSSP {
         )
         
         // Save to HDFS (similar to giraph)
-        val startFinish = System.currentTimeMillis
         sssp.vertices.saveAsTextFile(outputFilePath)
-        val finishTime = System.currentTimeMillis - startFinish
-        
-        println(s"SETUP_TIME: $setupTime")
-        println(s"FINISH_TIME: $finishTime")
-        println(s"START_MILLIS: $startMillis")
 
-        //println(sssp.vertices.collect.mkString("\n"))
+        val postOutputMillis = System.currentTimeMillis
+        println(s"START_MILLIS: $startMillis")
+        println(s"POST_SETUP_MILLIS: $postSetupMillis")
+        println(s"POST_OUTPUT_MILLIS: $postSetupMillis")
+        
     }
 }

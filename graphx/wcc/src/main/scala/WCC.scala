@@ -29,18 +29,16 @@ object WCC {
 
         // Load the graph as in the PageRank example
         val graph = GraphLoader.edgeListFile(sc, inputFilePath)
-        val setupTime = System.currentTimeMillis - startSetup
+        val postSetupMillis = System.currentTimeMillis
         // Find the connected components
         val cc = graph.connectedComponents().vertices
 
         // Save to HDFS (similar to giraph)
-        val startFinish = System.currentTimeMillis
         cc.saveAsTextFile(outputFilePath)
-        val finishTime = System.currentTimeMillis - startFinish
         
-        println(s"SETUP_TIME: $setupTime")
-        println(s"FINISH_TIME: $finishTime")
+        val postOutputMillis = System.currentTimeMillis
         println(s"START_MILLIS: $startMillis")
-
+        println(s"POST_SETUP_MILLIS: $postSetupMillis")
+        println(s"POST_OUTPUT_MILLIS: $postSetupMillis")
     }
 }

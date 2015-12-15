@@ -23,9 +23,9 @@ def get_times(filepath):
         startMillis = start time
     """
     pattern = dict()
-    pattern['setup'] = re.compile('SETUP_TIME: ([0-9]+)')
-    pattern['finish'] = re.compile('FINISH_TIME: ([0-9]+)')
     pattern['startMillis'] = re.compile('START_MILLIS: ([0-9]+)')
+    pattern['postSetupMillis'] = re.compile('POST_SETUP_MILLIS: ([0-9]+)')
+    pattern['postOutputMillis'] = re.compile('POST_OUTPUT_MILLIS: ([0-9]+)')
     print("filepath: {}".format(filepath))
     with open(filepath) as f:
         lines = f.readlines()

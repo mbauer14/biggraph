@@ -121,7 +121,7 @@ def parse_disk(a):
     return d
 
 
-def read_time_stamps(filename):
+def read_time_stamps(filename, end_time=None):
     """
     Takes in filename, reads it and outputs a tuple of start time
     and end time
@@ -136,9 +136,9 @@ def read_time_stamps(filename):
     with open(filename) as f:
         a = f.readlines()
         start_time = int(a[0].split()[1])
-        end_time = int(a[len(a)-1].split()[1])
-        elapsed_time = end_time - start_time
-        return elapsed_time, start_time
+        if not end_time:
+            end_time = int(a[len(a)-1].split()[1])
+        return start_time, end_time
 
 def ssh_machine_proc_stats(hostname, filepath):
     """

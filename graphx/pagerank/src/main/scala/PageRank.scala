@@ -27,25 +27,21 @@ object PageRank {
         conf.set("spark.executor.cores", "4")
         conf.set("spark.task.cpus", "1")
 
-        val startSetup = System.currentTimeMillis
         val sc = new SparkContext(conf)
 
         // Load the edges as a graph
         val graph = GraphLoader.edgeListFile(sc, inputLocation)
-        val setupTime = System.currentTimeMillis - startSetup
+        val postSetupMillis = System.currentTimeMillis
         // Run PageRank
         val ranks = graph.pageRank(0.0001).vertices
        
         // Save to HDFS
-        val startFinish = System.currentTimeMillis
         ranks.saveAsTextFile(outputFilePath)
-        val finishTime = System.currentTimeMillis - startFinish
 
-        println(s"SETUP_TIME: $setupTime")
-        println(s"FINISH_TIME: $finishTime")
+        val postOutputMillis = System.currentTimeMillis
         println(s"START_MILLIS: $startMillis")
-        //print the result
-        //println(ranks.collect().mkString("\n"))
+        println(s"POST_SETUP_MILLIS: $postSetupMillis")
+        println(s"POST_OUTPUT_MILLIS: $postSetupMillis")
 
     }
 }

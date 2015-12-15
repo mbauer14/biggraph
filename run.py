@@ -43,7 +43,7 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
     startTime = int(time.time())
     runProcess = subprocess.Popen([script, dataset, os.path.join(hdfsPath, name)], stdout=f, stderr=f, shell=True)
     currTime = int(time.time())
-    # Let queries run for 120 seconds
+    # Let queries run for 200 seconds
     while (int(time.time()) - startTime) < 200:
         runProcess.poll()
         if runProcess.returncode:
@@ -52,11 +52,11 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
             break
 
         time.sleep(1)
+
+    if isFail:
+        runProcess.terminate()
+
     return isFail
-
-
-
-
 
 def output_to_file(resultFile, results):
     if os.path.exists(resultFile):
@@ -98,7 +98,6 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
         algo = type of algorithm to run (connected components, sssp, pagerank)
         dataset = what kind of dataset to run (preprocessed and available in HDFS)
     """
-    isSuccess = True
     # Get the initial stats for all vms
     print 'getting initial stats'
     start_stats = procutils.get_all_stats()
@@ -119,8 +118,10 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     isFail = callRunScript(xtype, algo, dataset, logfile, hdfsPath, name)
     print 'script complete'
 
+    fail_time = None
     if isFail:
-        print("Failed (timed out). Skipping the rest of calculations")
+        print("Failed (timed out).")
+        fail_time = int(time.time())
 
     # Get the final stats
     print 'Getting final stats.'
@@ -134,7 +135,7 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
 
     # Get elapsed time
     print("get elapsed time, cpumem")
-    total_time_elapsed, start_time = procutils.read_time_stamps(logfile)
+    start_time, end_time = procutils.read_time_stamps(logfile, end_time=fail_time)
     cpuMemVals = loop_stats.cpuMemStats
     maxMem = loop_stats.maxMem
     loop_stats.signal = False
@@ -157,7 +158,7 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
         'maxMem': maxMem,
         'cpuMem': cpuMemVals,
         'times': times,
-        'isSuccess': True
+        'isSuccess': !isFail
     }
 
     # Echo everything to a file

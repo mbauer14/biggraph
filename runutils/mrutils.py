@@ -34,11 +34,9 @@ def get_times():
         startMillis = start time
     """
     pattern = dict()
-    pattern['startMillis'] = re.compile('START MILLIS: ([0-9]+)')
-    pattern['init'] = re.compile('INIT: ([0-9]+)')
-    pattern['setup'] = re.compile('SETUP: ([0-9]+)')
-    pattern['inputSuperStep'] = re.compile('input superstep: Took ([0-9]+\.[0-9]+) seconds')
-    pattern['finish'] = re.compile('shutdown: Took ([0-9]+\.[0-9]+) seconds')
+    pattern['startMillis'] = re.compile('START_MILLIS: ([0-9]+)')
+    pattern['postSetupMillis'] = re.compile('POST_SETUP_MILLIS: ([0-9]+)')
+    pattern['postOutputMillis'] = re.compile('POST_OUTPUT_MILLIS: ([0-9]+)')
     filepaths = glob.glob('/home/ubuntu/logs/apps/*/*/task-*-stdout.log')
     found= {key:False for key in pattern.keys()}
     results = dict()
@@ -59,11 +57,7 @@ def get_times():
                             results[key] *= 1000
                         found[key] = True
 
-    returnDict = dict()
-    returnDict['setup'] = results['init'] + results['setup'] + results['inputSuperStep']
-    returnDict['finish'] = results['finish']
-    returnDict['startMillis'] = results['startMillis']
-    return returnDict
+    return results
 
 def copy_mr_log_file(xoutputdir):
 
