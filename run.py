@@ -9,6 +9,7 @@ import pprint
 import datetime
 import threading
 import time
+import signal
 # ACTUAL
 
 #xtypes = ['giraph', 'graphx']
@@ -20,6 +21,8 @@ datasets = ['gnutella', 'google', 'livejournal']
 algos = ['sssp', 'cc', 'pagerank']
 
 NUM_ITERS = 1
+# 12 minutes
+WAIT_FAIL_TIME = 60 * 12
 
 vms = ['vm-1', 'vm-2', 'vm-3', 'vm-4']
 
@@ -41,10 +44,11 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
     isFail = True
 
     startTime = int(time.time())
-    runProcess = subprocess.Popen(" ".join([script, dataset, os.path.join(hdfsPath, name)]), stdout=f, stderr=f, shell=True)
+    hdfsFullPath = os.path.join(hdfsPath, name)
+    runProcess = subprocess.Popen(" ".join([script, dataset, hdfsFullPath]), stdout=f, stderr=f, shell=True)
     currTime = int(time.time())
     # Let queries run for 200 seconds
-    while (int(time.time()) - startTime) < 200:
+    while (int(time.time()) - startTime) < WAIT_FAIL_TIME:
         runProcess.poll()
         if runProcess.returncode is not None:
             print("process completed!")
@@ -55,9 +59,18 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
 
     if isFail:
         try:
-            runProcess.terminate()
+            #runProcess.kill()
+            a = 1
         except:
             pass
+        # Search for the process in ps, send sigterm so it has a chance to cleanup
+        p = subprocess.Popen(['ps', '-aux'], stdout=subprocess.PIPE)
+        out, err = p.communicate()
+
+        for line in out.splitlines():
+            if hdfsFullPath in line:
+                pid = int(line.split()[1])
+                os.kill(pid, signal.SIGTERM)
 
     return isFail
 
@@ -86,7 +99,10 @@ def copyLogsFromVms():
     for vm in vms:
         if vm != 'vm-1':
             vmLoc = "{}:/home/ubuntu/logs/apps/*".format(vm)
-            output = subprocess.check_output(['scp', '-r', vmLoc, '/home/ubuntu/logs/apps/'])
+            try:
+                output = subprocess.check_output(['scp', '-r', vmLoc, '/home/ubuntu/logs/apps/'])
+            except:
+                pass
 
 def hadoopMakeDirs(hdfsPath):
     subprocess.call(['hadoop', 'dfs', '-mkdir', hdfsPath])

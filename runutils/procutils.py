@@ -51,7 +51,7 @@ class StatsLooper(threading.Thread):
         while self.signal:
             currCpus = []
             currMems = []
-            currtime = int(time.time())
+            currtime = int(round(time.time() * 1000))
             for vm in vms:
                 cat_output = subprocess.check_output(['ssh', vm, 'cat', '/proc/stat', ';', 'free', '-m'])
                 cat_output = cat_output.splitlines()
@@ -59,7 +59,7 @@ class StatsLooper(threading.Thread):
                 mem = cat_output[13:]
 
                 currCpuStats = parse_cpu(proc)
-                currMemStats = parse_mem(proc)
+                currMemStats = parse_mem(mem)
 
                 prevCpuStats = prevCpuStatsByVm.get(vm, None)
 
