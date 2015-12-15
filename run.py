@@ -41,12 +41,12 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
     isFail = True
 
     startTime = int(time.time())
-    runProcess = subprocess.Popen([script, dataset, os.path.join(hdfsPath, name)], stdout=f, stderr=f, shell=True)
+    runProcess = subprocess.Popen(" ".join([script, dataset, os.path.join(hdfsPath, name)]), stdout=f, stderr=f, shell=True)
     currTime = int(time.time())
     # Let queries run for 200 seconds
     while (int(time.time()) - startTime) < 200:
         runProcess.poll()
-        if runProcess.returncode:
+        if runProcess.returncode is not None:
             print("process completed!")
             isFail = False
             break
@@ -54,7 +54,10 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
         time.sleep(1)
 
     if isFail:
-        runProcess.terminate()
+        try:
+            runProcess.terminate()
+        except:
+            pass
 
     return isFail
 
@@ -148,17 +151,19 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     else:
         times = sparkutils.get_times(logfile)
 
+    times['start_time'] = start_time
+    times['end_time'] = end_time
+
     # Change times in the cpuMemVals to "query time", not abs time
     for entry in cpuMemVals:
         entry['time'] = entry['time'] - start_time
 
     results = {
         'disknet': diff_stats,
-        'total_time_elapsed': total_time_elapsed,
         'maxMem': maxMem,
         'cpuMem': cpuMemVals,
         'times': times,
-        'isSuccess': !isFail
+        'isSuccess': not isFail
     }
 
     # Echo everything to a file

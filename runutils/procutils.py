@@ -33,6 +33,7 @@ def parse_cpu(proc):
         'guest': int(p[9]),
         'guest_nice': int(p[10])
     }
+    return currCpuStats
 
 def parse_mem(mem):
     return int(mem[2].split()[2])
@@ -41,7 +42,7 @@ def parse_mem(mem):
 class StatsLooper(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self.cpuMemStats = dict()
+        self.cpuMemStats = []
         self.signal = True
         self.maxMem = 0
 
