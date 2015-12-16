@@ -26,6 +26,8 @@ object PageRank {
         conf.set("spark.executor.memory", "21000m")
         conf.set("spark.executor.cores", "4")
         conf.set("spark.task.cpus", "1")
+        conf.setAppName(appName)
+        conf.setMaster(master)
 
         val sc = new SparkContext(conf)
 

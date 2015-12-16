@@ -45,7 +45,6 @@ def get_times():
         with open(filepath) as f:
             lines = f.readlines()
 
-
         for l in lines:
             for key in found.keys():
                 if not found[key]:
