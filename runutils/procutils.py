@@ -52,28 +52,34 @@ class StatsLooper(threading.Thread):
             currCpus = []
             currMems = []
             currtime = int(round(time.time() * 1000))
+            success = True
             for vm in vms:
-                cat_output = subprocess.check_output(['ssh', vm, 'cat', '/proc/stat', ';', 'free', '-m'])
-                cat_output = cat_output.splitlines()
-                proc = cat_output[0:13]
-                mem = cat_output[13:]
+                try:
+                    cat_output = subprocess.check_output(['ssh', vm, 'cat', '/proc/stat', ';', 'free', '-m'])
+                except:
+                    success = False
 
-                currCpuStats = parse_cpu(proc)
-                currMemStats = parse_mem(mem)
+                if success:
+                    cat_output = cat_output.splitlines()
+                    proc = cat_output[0:13]
+                    mem = cat_output[13:]
 
-                prevCpuStats = prevCpuStatsByVm.get(vm, None)
+                    currCpuStats = parse_cpu(proc)
+                    currMemStats = parse_mem(mem)
 
-                if currMemStats > self.maxMem:
-                    self.maxMem = currMemStats
+                    prevCpuStats = prevCpuStatsByVm.get(vm, None)
 
-                if prevCpuStats:
-                    cpuUtil = get_cpu_usage(prevCpuStats, currCpuStats)
-                    currCpus.append(cpuUtil)
-                    currMems.append(currMemStats)
+                    if currMemStats > self.maxMem:
+                        self.maxMem = currMemStats
 
-                prevCpuStatsByVm[vm] = currCpuStats
+                    if prevCpuStats:
+                        cpuUtil = get_cpu_usage(prevCpuStats, currCpuStats)
+                        currCpus.append(cpuUtil)
+                        currMems.append(currMemStats)
 
-            if len(currCpus) > 0:
+                    prevCpuStatsByVm[vm] = currCpuStats
+
+            if len(currCpus) > 0 and success:
                 avgCpu = sum(currCpus)/4.0
                 avgMem = sum(currMems)/4.0
                 self.cpuMemStats.append({'time': currtime, 'mem': avgMem, 'cpu': avgCpu})
