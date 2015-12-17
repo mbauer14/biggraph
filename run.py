@@ -74,22 +74,13 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
 
     return isFail
 
+def runCmd(cmd):
+    subprocess.call([os.getenv('SHELL'), '-i', '-c', cmd])
+
 def stopStartAll():
-    runProcess = subprocess.Popen("stop_all; start_all; stop_spark; start_spark", stdout=f, stderr=f, shell=True, cwd='/home/ubuntu')
-    currTime = int(time.time())
-    # Let queries run for 200 seconds
-    isFail = True
-    while (int(time.time()) - startTime) < 300:
-        runProcess.poll()
-        if runProcess.returncode is not None:
-            print("process completed!")
-            isFail = False
-            break
+    for cmd in ['stop_all', 'start_all', 'stop_spark', 'start_spark']:
+        runCmd(cmd)
 
-        time.sleep(1)
-
-    if isFail:
-        print("FAILED RESTARTING ALL")
 
 def output_to_file(resultFile, results):
     if os.path.exists(resultFile):
