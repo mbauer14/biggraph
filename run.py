@@ -74,6 +74,23 @@ def callRunScript(xtype, algo, dataset, logfile, hdfsPath, name):
 
     return isFail
 
+def stopStartAll():
+    runProcess = subprocess.Popen("stop_all; start_all; stop_spark; start_spark", stdout=f, stderr=f, shell=True, cwd='/home/ubuntu')
+    currTime = int(time.time())
+    # Let queries run for 200 seconds
+    isFail = True
+    while (int(time.time()) - startTime) < 300:
+        runProcess.poll()
+        if runProcess.returncode is not None:
+            print("process completed!")
+            isFail = False
+            break
+
+        time.sleep(1)
+
+    if isFail:
+        print("FAILED RESTARTING ALL")
+
 def output_to_file(resultFile, results):
     if os.path.exists(resultFile):
         os.remove(resultFile)
@@ -108,16 +125,17 @@ def copyLogsFromVms(xoutputdir, name, xtype):
             except:
                 pass
     # Afterwards, copy to Xoutput
-    fullpath = os.path.join(xoutputdir, name)
-    os.makedirs(fullpath)
+    try:
+        os.makedirs(xoutputdir)
+    except:
+        pass
     if xtype == 'giraph':
         files = glob.glob('/home/ubuntu/logs/apps/*')
     else:
         files = glob.glob('/home/ubuntu/logs/apps_spark/*')
 
     for f in files:
-        shutil.copytree(f, fullpath)
-
+        output = subprocess.check_output(['cp', '-r', f, xoutputdir+"/"])
 
 def hadoopMakeDirs(hdfsPath):
     subprocess.call(['hadoop', 'dfs', '-mkdir', hdfsPath])
@@ -227,6 +245,7 @@ def main():
                     emptyBufferCaches()
                     clearAppLogs()
                     sparkutils.removeLocalDirs()
+                    stopStartAll()
                     print("{} iter {}: starting {} {} {}".format(currtime, iterationNo, xtype, algo, dataset))
                     runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo)
 
