@@ -9,7 +9,7 @@ import pprint
 import datetime
 import threading
 import glob
-import shutils
+import shutil
 import time
 import signal
 #xtypes = ['giraph', 'graphx']
@@ -116,7 +116,7 @@ def copyLogsFromVms(xoutputdir, name, xtype):
         files = glob.glob('/home/ubuntu/logs/apps_spark/*')
 
     for f in files:
-        shutils.copytree(f, fullpath)
+        shutil.copytree(f, fullpath)
 
 
 def hadoopMakeDirs(hdfsPath):
