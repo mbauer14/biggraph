@@ -8,10 +8,10 @@ import json
 import pprint
 import datetime
 import threading
+import glob
+import shutils
 import time
 import signal
-# ACTUAL
-
 #xtypes = ['giraph', 'graphx']
 #datasets = ['tiny']
 #algos = ['sssp', 'cc', 'pagerank']
@@ -94,15 +94,30 @@ def clearAppLogs():
     # Remove all files from ~/logs/apps/
     for vm in vms:
         output = subprocess.check_output(['ssh', vm, 'rm', '-rf', '/home/ubuntu/logs/apps/*'])
+        output = subprocess.check_output(['ssh', vm, 'rm', '-rf', '/home/ubuntu/logs/apps_spark/*'])
 
-def copyLogsFromVms():
+def copyLogsFromVms(xoutputdir, name, xtype):
     for vm in vms:
         if vm != 'vm-1':
             vmLoc = "{}:/home/ubuntu/logs/apps/*".format(vm)
             try:
-                output = subprocess.check_output(['scp', '-r', vmLoc, '/home/ubuntu/logs/apps/'])
+                if xtype == 'giraph':
+                    output = subprocess.check_output(['scp', '-r', vmLoc, '/home/ubuntu/logs/apps/'])
+                else:
+                    output = subprocess.check_output(['scp', '-r', vmLoc, '/home/ubuntu/logs/apps_spark/'])
             except:
                 pass
+    # Afterwards, copy to Xoutput
+    fullpath = os.path.join(xoutputdir, name)
+    os.makedirs(fullpath)
+    if xtype == 'giraph':
+        files = glob.glob('/home/ubuntu/logs/apps/*')
+    else:
+        files = glob.glob('/home/ubuntu/logs/apps_spark/*')
+
+    for f in files:
+        shutils.copytree(f, fullpath)
+
 
 def hadoopMakeDirs(hdfsPath):
     subprocess.call(['hadoop', 'dfs', '-mkdir', hdfsPath])
@@ -161,8 +176,8 @@ def runAlgo(resultsDir, hdfsPath, xtype, algo, dataset, iterationNo):
     print("finished elapsed time, cpumem")
 
     # Get setup time/other time
+    copyLogsFromVms(xoutputdir, name, xtype)
     if xtype == 'giraph':
-        copyLogsFromVms()
         times = mrutils.get_times()
     else:
         times = sparkutils.get_times(logfile)
